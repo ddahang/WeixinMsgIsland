@@ -44,6 +44,10 @@ python -m PyInstaller --noconfirm --clean --onefile --windowed --name "微信消
 
 生成文件位于 `dist\微信消息胶囊.exe`。托盘图标资源会打包进单文件 EXE。
 
+## 下载发行版
+
+在 [Releases](https://github.com/likeyun/WeixinMsgIsland/releases) 下载 Windows x64 或 ARM64 版本。首发版本仅支持 Windows；程序依赖 Windows Shell Hook，暂不提供 macOS 发行包。
+
 ## 诊断
 
 ```powershell
