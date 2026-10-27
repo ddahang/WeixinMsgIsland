@@ -12,6 +12,8 @@
 
 提醒依赖微信和 Windows 发出任务栏闪烁事件。若微信没有发出该事件，程序无法保证显示提醒。
 
+![image](https://p3.ssl.qhimg.com/t11b673bcd618a51fb3dc3432ed.gif)
+
 ## 运行
 
 仅支持 Windows。使用 Python 运行时，Pillow 用于更精细的动画和透明渲染；没有 Pillow 时会回退到简易界面。
