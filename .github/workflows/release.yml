@@ -1,0 +1,91 @@
+name: Windows release
+
+on:
+  create:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    if: github.event_name == 'push' || (github.event_name == 'create' && github.event.ref_type == 'branch' && startsWith(github.event.ref, 'release/'))
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: windows-2025
+            python_arch: x64
+          - arch: arm64
+            runner: windows-11-arm
+            python_arch: arm64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+          architecture: ${{ matrix.python_arch }}
+
+      - name: Install build dependencies
+        run: python -m pip install --upgrade pip; python -m pip install -r requirements-build.txt
+
+      - name: Build executable
+        run: >-
+          python -m PyInstaller --noconfirm --clean --onefile --windowed
+          --name WeixinMsgIsland --icon wechat_capsule.ico
+          --add-data "wechat_capsule.ico;." wechat_capsule.py
+
+      - name: Name executable by architecture
+        shell: pwsh
+        run: Move-Item -LiteralPath "dist/WeixinMsgIsland.exe" -Destination "WeixinMsgIsland-windows-${{ matrix.arch }}.exe"
+
+      - name: Upload executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-${{ matrix.arch }}
+          path: WeixinMsgIsland-windows-${{ matrix.arch }}.exe
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    needs: build
+    if: github.event_name == 'push' || (github.event_name == 'create' && github.event.ref_type == 'branch' && startsWith(github.event.ref, 'release/'))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve release tag
+        id: release-meta
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          CREATED_REF: ${{ github.event.ref }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [[ "$EVENT_NAME" == "create" ]]; then
+            tag="${CREATED_REF#release/}"
+          else
+            tag="$REF_NAME"
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Download executables
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release-meta.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          name: WeixinMsgIsland ${{ steps.release-meta.outputs.tag }}
+          generate_release_notes: true
+          files: release-assets/*.exe
+          fail_on_unmatched_files: true
