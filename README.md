@@ -1,2 +1,51 @@
 # WeixinMsgIsland
-微信电脑版消息通知灵动岛提醒
+
+微信电脑版消息通知灵动岛提醒（Windows）。程序监听 Windows Shell Hook 的任务栏闪烁事件，在屏幕顶部显示提醒胶囊；不读取聊天内容，也不统计未读条数。
+
+## 功能
+
+- 微信请求任务栏关注时显示动画胶囊和绿点。
+- 微信窗口激活后自动清除提醒。
+- 空闲时显示拟物化镜头孔圆点；提醒胶囊带柔和阴影。
+- 通知区托盘图标提供“恢复胶囊位置”和“退出”菜单。
+- 支持拖动位置、自定义微信图标和事件诊断模式。
+
+提醒依赖微信和 Windows 发出任务栏闪烁事件。若微信没有发出该事件，程序无法保证显示提醒。
+
+## 运行
+
+仅支持 Windows。使用 Python 运行时，Pillow 用于更精细的动画和透明渲染；没有 Pillow 时会回退到简易界面。
+
+```powershell
+python -m pip install Pillow
+pythonw .\wechat_capsule.py
+```
+
+`pythonw` 会隐藏控制台；点击右下角托盘图标，在菜单中选择“退出”即可关闭后台进程。调试时可改用 `python .\wechat_capsule.py` 保留控制台。
+
+常用参数：
+
+```powershell
+python .\wechat_capsule.py --hide-idle
+python .\wechat_capsule.py --probe --seconds 60
+python .\wechat_capsule.py --exe Weixin.exe
+```
+
+右键胶囊可模拟提醒、恢复默认位置或退出。`--icon` 可指定 PNG 图标，`--tk` 可强制使用简易 Tk 界面。
+
+## 打包 EXE
+
+```powershell
+python -m pip install -r requirements-build.txt
+python -m PyInstaller --noconfirm --clean --onefile --windowed --name "微信消息胶囊" --icon "wechat_capsule.ico" --add-data "wechat_capsule.ico;." "wechat_capsule.py"
+```
+
+生成文件位于 `dist\微信消息胶囊.exe`。托盘图标资源会打包进单文件 EXE。
+
+## 诊断
+
+```powershell
+python .\wechat_capsule.py --probe --all --seconds 60
+```
+
+诊断模式会在控制台列出 Shell Hook 收到的事件，用于判断微信是否发出了任务栏闪烁事件。
